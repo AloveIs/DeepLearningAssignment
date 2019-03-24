@@ -3,6 +3,10 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     batch_size = int32(size(Y,2)/ GDparams.n_batch);
     C = zeros(GDparams.n_epochs,2);
     A = zeros(GDparams.n_epochs,2);
+    
+    disp(ComputeCost(X, Y, W, b, lambda));
+    disp(ComputeCost(Xval, Yval, W, b, lambda));
+    
     for epoch = 1 : GDparams.n_epochs
         batch = 1;
         start_index  = 1;
@@ -31,6 +35,7 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
         %fprintf("###################\n");
         C(epoch,1) = ComputeCost(X, Y, W, b, lambda);
         C(epoch,2) = ComputeCost(Xval, Yval, W, b, lambda);
+        fprintf("Epoch : %d\ttest: %f \tval: %f\n", epoch,C(epoch,1),C(epoch,2));
         
         A(epoch,1) = compute_accuracy(X, Y, W, b);
         A(epoch,2) = compute_accuracy(Xval, Yval, W, b);
@@ -39,7 +44,8 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     
     x = 1 : GDparams.n_epochs;
-    plot(x, C(:,1),x, C(:,2));
+    figure();
+    semilogy(x, C(:,1),x, C(:,2));
     figure();
     plot(x, A(:,1),x, A(:,2));
     Wstar = W;
@@ -61,3 +67,4 @@ R = argmax == y;
 acc = double(sum(R))/size(Y,2)*100;
 
 end
+
