@@ -1,11 +1,11 @@
-FILES = Assignment1.m LoadBatch.m ComputeCost.m EvaluateClassifier.m MiniBatchGD.m
+FILES = Assignment1.m LoadBatch.m EvaluateClassifier.m ComputeCost.m MiniBatchGD.m
 
 all: merged_code.m
 
 
 merged_code.m : $(FILES)
 	@for filename in $(FILES); do					\
-	    echo -e "\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%";	\
+	    echo "\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%";	\
 	    echo  "%%Content of file : $$filename";			\
 	    echo  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n";	\
 	    cat "$$filename";						\

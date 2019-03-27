@@ -9,10 +9,12 @@
 % predictions for the images in X relative to the ground truth labels and
 % the regularization term on W.
 function J = ComputeCost(X, Y, W, b, lambda)
-
+    % get the evaluation of the current parameters for the batch
     P = EvaluateClassifier(X, W, b);
    
+    %compute the cross-entropy part
     J = -mean(log(sum(Y .* P,1)));
    
+    % add the regularizing term
     J =  J + lambda * sum(sum(W .* W,'double'),'double');
 end

@@ -28,7 +28,7 @@ function [X, Y, y] = LoadBatch(filename, debug)
     end
     
     
-    %% First do the labels
+    %% First extract the labels
     % Number of classes
     K = 10;
     
@@ -49,7 +49,7 @@ function [X, Y, y] = LoadBatch(filename, debug)
         disp(Y(:,1:20));
     end
     
-    %% Process Images
+    %% Normalize data
     X = double(Batch.data)'/255.0;
     
 end

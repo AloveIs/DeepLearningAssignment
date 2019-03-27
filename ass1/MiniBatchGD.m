@@ -1,34 +1,48 @@
+%% MiniBatchGD
+%
+% Perform the model update.
+% where X contains all the training images, Y the labels for the training
+% images, W, b are the initial values for the network’s parameters, lambda
+% is the regularization factor in the cost function and GDparams is an object containing the parameter values n batch, eta
+% and n epochs
+%
 function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     batch_size = int32(size(Y,2)/ GDparams.n_batch);
+    
+    % matrices to save cost and accuracy after each epoch
     C = zeros(GDparams.n_epochs,2);
     A = zeros(GDparams.n_epochs,2);
+    
+    
     for epoch = 1 : GDparams.n_epochs
         batch = 1;
         start_index  = 1;
-        while start_index < size(X,2)          %batch = 1 : GDparams.n_batch
-            %fprintf("epoch %d - batch %d\n",epoch, batch);
+        while start_index < size(X,2)
+            
             if start_index >= size(X,2)
                 break;
             end
-            
+            %get indexes of the batch data
             idx = start_index : min(start_index + batch_size -1, size(X,2));
-            %fprintf("%d\t%d\n",idx(1), idx(end));
             
-            %update starting
+            %update starting index
             start_index = start_index + batch_size;
             
+            % index the actual data
             X_batch = X(:,idx);
             Y_batch = Y(:,idx);
             
+            % update parameters
             P = EvaluateClassifier(X_batch, W, b);
             [grad_W, grad_b] = ComputeGradients(X_batch, Y_batch, P, W, lambda);
             W = W - GDparams.eta * grad_W;
             b = b - GDparams.eta * grad_b;
             batch = batch + 1;
         end
-        %fprintf("Batches performed : %d", batch-1);
-        %fprintf("###################\n");
+        
+        
+        % save the cost and accuracy after each epoch
         C(epoch,1) = ComputeCost(X, Y, W, b, lambda);
         C(epoch,2) = ComputeCost(Xval, Yval, W, b, lambda);
         
@@ -37,11 +51,13 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     end
     
     
-    
+    % plot loss and accuracy of the network
     x = 1 : GDparams.n_epochs;
     plot(x, C(:,1),x, C(:,2));
     figure();
     plot(x, A(:,1),x, A(:,2));
+    
+    % set return values
     Wstar = W;
     bstar = b;
 end

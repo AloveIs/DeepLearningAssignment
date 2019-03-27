@@ -9,15 +9,15 @@
 %
 function P = EvaluateClassifier(X, W, b)
     % evaluate linear part
-    s = W * X + b;
+    s = W * X + b *  ones(1,size(X,2));
     
     % compute the softmax:
-    % - numerators:
+    % - numerators of the softmax:
     E = exp(s);
-    % - denominators:
-    D = sum(E,1);
+    % - denominators of the softmax:
+    D = ones(size(W,1),1) * sum(E,1);
     
     % Divide each column by their sum
     % to have the softmax
-    P = bsxfun(@rdivide, E, D);
+    P = E./D;
 end

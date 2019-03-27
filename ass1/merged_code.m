@@ -1,11 +1,9 @@
--e 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Content of file : Assignment1.m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-% Assignment 1
 
 % prepare the environment and constants
 addpath('Datasets/cifar-10-batches-mat');
@@ -14,7 +12,7 @@ train_data = 'data_batch_1.mat';
 val_data = 'data_batch_2.mat';
 test_data = 'test_batch.mat';
 
-
+% load data
 [X_train, Y_train, y_train] = LoadBatch(train_data);
 [X_val, Y_val, y_val] = LoadBatch(val_data);
 [X_test, Y_test, y_test] = LoadBatch(test_data);
@@ -23,31 +21,30 @@ N = size(y_train,2);
 K = size(Y_train,1);
 d = size(X_train,1);
 
-[W , b] = initialize_params(K,d);
 
-lambda = 0.1;
+lambda = 1.0;
 
 GDparams.n_batch = 100;
 GDparams.eta = 0.01;
 GDparams.n_epochs = 40;
 
+% initialization
+[W , b] = initialize_params(K,d);
+% training
 [Wstar, bstar] = MiniBatchGD(X_train, Y_train, GDparams, W, b, lambda, X_val, Y_val);
 
 
 % test
 
-
-count = 0;
-
-
+% classification using best parameters
 P = EvaluateClassifier(X_test, Wstar, bstar);
-
 [argvalue, argmax] = max(P);
-
+% compare with ground truth
 R = argmax == y_test;
 
 fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100)
 
+% show prototypes of the learnt W matrix
 F = show_prototype(Wstar);
 
 
@@ -79,13 +76,13 @@ function s_im = show_prototype(W)
         s_im(:,:,:,i) = permute(s_im(:,:,:,i), [2, 1, 3]);
     end
     
-    montage(s_im, 'Size', [1,10]);
+    montage(s_im, 'Size', [3,4]);
     
 end
 
 
 
--e 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Content of file : LoadBatch.m
@@ -122,7 +119,7 @@ function [X, Y, y] = LoadBatch(filename, debug)
     end
     
     
-    %% First do the labels
+    %% First extract the labels
     % Number of classes
     K = 10;
     
@@ -143,34 +140,10 @@ function [X, Y, y] = LoadBatch(filename, debug)
         disp(Y(:,1:20));
     end
     
-    %% Process Images
+    %% Normalize data
     X = double(Batch.data)'/255.0;
     
-end-e 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%Content of file : ComputeCost.m
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%% ComputeCost
-%
-% Compute the cost function
-%
-% • each column of X corresponds to an image and X has size d×n.
-% • each column of Y (K×n) is the one-hot ground truth label for the corre-
-% sponding column of X or Y is the (1×n) vector of ground truth labels.
-% • J is a scalar corresponding to the sum of the loss of the network’s
-% predictions for the images in X relative to the ground truth labels and
-% the regularization term on W.
-function J = ComputeCost(X, Y, W, b, lambda)
-
-    P = EvaluateClassifier(X, W, b);
-   
-    J = -mean(log(sum(Y .* P,1)));
-   
-    J =  J + lambda * sum(sum(W .* W,'double'),'double');
-end-e 
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Content of file : EvaluateClassifier.m
@@ -188,55 +161,95 @@ end-e
 %
 function P = EvaluateClassifier(X, W, b)
     % evaluate linear part
-    s = W * X + b;
+    s = W * X + b *  ones(1,size(X,2));
     
     % compute the softmax:
-    % - numerators:
+    % - numerators of the softmax:
     E = exp(s);
-    % - denominators:
-    D = sum(E,1);
+    % - denominators of the softmax:
+    D = ones(size(W,1),1) * sum(E,1);
     
     % Divide each column by their sum
     % to have the softmax
-    P = bsxfun(@rdivide, E, D);
-end-e 
+    P = E./D;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%Content of file : ComputeCost.m
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% ComputeCost
+%
+% Compute the cost function
+%
+% • each column of X corresponds to an image and X has size d×n.
+% • each column of Y (K×n) is the one-hot ground truth label for the corre-
+% sponding column of X or Y is the (1×n) vector of ground truth labels.
+% • J is a scalar corresponding to the sum of the loss of the network’s
+% predictions for the images in X relative to the ground truth labels and
+% the regularization term on W.
+function J = ComputeCost(X, Y, W, b, lambda)
+    % get the evaluation of the current parameters for the batch
+    P = EvaluateClassifier(X, W, b);
+   
+    %compute the cross-entropy part
+    J = -mean(log(sum(Y .* P,1)));
+   
+    % add the regularizing term
+    J =  J + lambda * sum(sum(W .* W,'double'),'double');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Content of file : MiniBatchGD.m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+%% MiniBatchGD
+%
+% Perform the model update.
+% where X contains all the training images, Y the labels for the training
+% images, W, b are the initial values for the network’s parameters, lambda
+% is the regularization factor in the cost function and GDparams is an object containing the parameter values n batch, eta
+% and n epochs
+%
 function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     batch_size = int32(size(Y,2)/ GDparams.n_batch);
+    
+    % matrices to save cost and accuracy after each epoch
     C = zeros(GDparams.n_epochs,2);
     A = zeros(GDparams.n_epochs,2);
+    
+    
     for epoch = 1 : GDparams.n_epochs
         batch = 1;
         start_index  = 1;
-        while start_index < size(X,2)          %batch = 1 : GDparams.n_batch
-            %fprintf("epoch %d - batch %d\n",epoch, batch);
+        while start_index < size(X,2)
+            
             if start_index >= size(X,2)
                 break;
             end
-            
+            %get indexes of the batch data
             idx = start_index : min(start_index + batch_size -1, size(X,2));
-            %fprintf("%d\t%d\n",idx(1), idx(end));
             
-            %update starting
+            %update starting index
             start_index = start_index + batch_size;
             
+            % index the actual data
             X_batch = X(:,idx);
             Y_batch = Y(:,idx);
             
+            % update parameters
             P = EvaluateClassifier(X_batch, W, b);
             [grad_W, grad_b] = ComputeGradients(X_batch, Y_batch, P, W, lambda);
             W = W - GDparams.eta * grad_W;
             b = b - GDparams.eta * grad_b;
             batch = batch + 1;
         end
-        %fprintf("Batches performed : %d", batch-1);
-        %fprintf("###################\n");
+        
+        
+        % save the cost and accuracy after each epoch
         C(epoch,1) = ComputeCost(X, Y, W, b, lambda);
         C(epoch,2) = ComputeCost(Xval, Yval, W, b, lambda);
         
@@ -245,11 +258,13 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     end
     
     
-    
+    % plot loss and accuracy of the network
     x = 1 : GDparams.n_epochs;
     plot(x, C(:,1),x, C(:,2));
     figure();
     plot(x, A(:,1),x, A(:,2));
+    
+    % set return values
     Wstar = W;
     bstar = b;
 end
