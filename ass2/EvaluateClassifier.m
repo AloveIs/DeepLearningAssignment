@@ -9,11 +9,15 @@
 %
 function P = EvaluateClassifier(X, W, b)
     % evaluate linear part
-    s = W * X + b *  ones(1,size(X,2));
+    s1 = W{1} * X + b{1} *  ones(1,size(X,2));
+    
+    Z = max(0,s1);
+    
+    s2 = W{2} * Z + b{2} *  ones(1,size(X,2));
     
     % compute the softmax:
     % - numerators of the softmax:
-    E = exp(s);
+    E = exp(s2);
     % - denominators of the softmax:
     D = ones(size(W,1),1) * sum(E,1);
     

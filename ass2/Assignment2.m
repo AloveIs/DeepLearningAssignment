@@ -1,5 +1,5 @@
 % prepare the environment and constants
-addpath('Datasets/cifar-10-batches-mat');
+addpath('../ass1/Datasets/cifar-10-batches-mat');
 
 train_data = 'data_batch_1.mat';
 val_data = 'data_batch_2.mat';
@@ -13,16 +13,21 @@ test_data = 'test_batch.mat';
 N = size(y_train,2);
 K = size(Y_train,1);
 d = size(X_train,1);
+%number of hidden nodes
+m = 50;
 
-
-lambda = 1.0;
+lambda = 0.01;
 
 GDparams.n_batch = 100;
 GDparams.eta = 0.01;
 GDparams.n_epochs = 40;
 
 % initialization
-[W , b] = initialize_params(K,d,0.01);
+[W , b] = initialize_params(K,m,d);
+% 
+% P  = EvaluateClassifier(X_train,W,b);
+% J = ComputeCost(X_train, Y_train, W, b, lambda);
+
 % training
 [Wstar, bstar] = MiniBatchGD(X_train, Y_train, GDparams, W, b, lambda, X_val, Y_val);
 
@@ -38,40 +43,21 @@ R = argmax == y_test;
 fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100)
 
 % show prototypes of the learnt W matrix
-F = show_prototype(Wstar);
-
 
 %% initialize_params
 %
 % Initialize the values for W and b
 %
-function [W , b] = initialize_params(K,d, std_dev)
+function [W , b] = initialize_params(K,m,d)
 
     %input check
-    if nargin < 3
-        std_dev = 0.1;
-    end
 
-    W = std_dev * randn(K,d);
-    b = std_dev * randn(K,1);
+    W1 = 1.0/sqrt(d) * randn(m,d);
+    W2 = 1.0/sqrt(m) * randn(K,m);
+    W = {W1,W2};
+    b1 = 1.0/sqrt(d) * randn(m,1);
+    b2 = 1.0/sqrt(m) * randn(K,1);
+    b = {b1,b2};
 end
-
-
-
-function s_im = show_prototype(W)
-    figure();
-    s_im = zeros(32, 32, 3, size(W,1));
-    
-    
-    for i=1:size(W,1)
-        im = reshape(W(i, :), 32, 32, 3);
-        s_im(:,:,:,i) = (im - min(im(:))) / (max(im(:))- min(im(:)));
-        s_im(:,:,:,i) = permute(s_im(:,:,:,i), [2, 1, 3]);
-    end
-    
-    montage(s_im, 'Size', [3,4]);
-    
-end
-
 
 

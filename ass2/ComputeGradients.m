@@ -11,21 +11,27 @@
 % K×1.
 %
 %
-function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, lambda)
+function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, b, lambda)
     % compute useful constant
     batch_size = double(size(X,2));
-
-    %initialization
-    grad_W = zeros(size(W));
-    grad_b = zeros(size(Y,1), 1);
     
     % compute g as defined on the slides
     g = -(Y-P);
     
-    % use g to compute the 2 gradients
-    grad_b = 1.0/ batch_size * sum(g,2);
+    H = W{1} * X + b{1} *  ones(1,size(X,2));
+    H = max(0,H);
     
-    grad_W = g * X';
-    % add the term about the regularization derivative
-    grad_W = 1.0/ batch_size * grad_W + 2 * lambda * W;
+    grad_b2 = 1.0/ batch_size * sum(g,2);
+    grad_W2 = 1.0/ batch_size * (g * H') + 2 * lambda * W{2};
+    % use g to compute the 2 gradients
+
+    g = (g' * W{2})';
+    g(H==0) = 0;
+    
+    
+    grad_b1 = 1.0/ batch_size * sum(g,2);
+    grad_W1 = 1.0/ batch_size * (g * X') + 2 * lambda * W{1};
+    
+    grad_b = {grad_b1, grad_b2};
+    grad_W = {grad_W1, grad_W2};
 end

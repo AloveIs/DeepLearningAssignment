@@ -14,7 +14,30 @@ function J = ComputeCost(X, Y, W, b, lambda)
    
     %compute the cross-entropy part
     J = -mean(log(sum(Y .* P,1)));
-   
+    
+    J2 = compute_regularization(W,lambda);
+    
     % add the regularizing term
-    J =  J + lambda * sum(sum(W .* W,'double'),'double');
+    J =  J + lambda*J2;
+end
+
+
+
+function J2 = compute_regularization(W, lambda)
+    J2 = 0;
+
+    if nargin < 2
+        lambda = 1;
+    end
+    
+    if lambda == 0
+        return;
+    end
+    
+    for k=1:length(W)
+        Wi = W{k};
+        J2 = J2 + sum(sum(Wi .* Wi,'double'),'double');
+    end
+
+
 end
