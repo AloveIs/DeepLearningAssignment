@@ -22,7 +22,7 @@ GDparams.eta = 0.01;
 GDparams.n_epochs = 40;
 
 % initialization
-[W , b] = initialize_params(K,d);
+[W , b] = initialize_params(K,d,0.01);
 % training
 [Wstar, bstar] = MiniBatchGD(X_train, Y_train, GDparams, W, b, lambda, X_val, Y_val);
 

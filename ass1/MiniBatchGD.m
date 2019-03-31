@@ -8,7 +8,7 @@
 %
 function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
-    batch_size = int32(size(Y,2)/ GDparams.n_batch);
+    batch_size = int32(GDparams.n_batch);
     
     % matrices to save cost and accuracy after each epoch
     C = zeros(GDparams.n_epochs,2);

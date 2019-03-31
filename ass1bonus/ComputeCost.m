@@ -9,18 +9,12 @@
 % predictions for the images in X relative to the ground truth labels and
 % the regularization term on W.
 function J = ComputeCost(X, Y, W, b, lambda)
-
+    % get the evaluation of the current parameters for the batch
     P = EvaluateClassifier(X, W, b);
-    
-    % compute the hinge loss function
-    
-    %compute the max
-    J = max(0, P - (P .* Y)+ 1);
-    %P(:,1:6)
-    %Y(:,1:6)
-    %J(:,1:6)
-    
-    J = 1.0 /double(size(X,2))  * sum(sum(J));
-    
+   
+    %compute the cross-entropy part
+    J = -mean(log(sum(Y .* P,1)));
+   
+    % add the regularizing term
     J =  J + lambda * sum(sum(W .* W,'double'),'double');
 end
