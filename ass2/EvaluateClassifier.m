@@ -23,5 +23,5 @@ function P = EvaluateClassifier(X, W, b)
     
     % Divide each column by their sum
     % to have the softmax
-    P = E./D;
+    P = { Z ,E./D};
 end

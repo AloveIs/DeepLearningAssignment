@@ -5,11 +5,11 @@ author: Pietro Alovisi
 
 # The Implementation
 
-The implementation is done in Matlab, following the suggested project structure. 
+The implementation is done in Matlab, following the suggested project structure.
 I achieved good computational performance by using vectorized operations. In particular I used the following matrices:
 
-$$ 
-\mathbf{X} =\begin{pmatrix} \mathbf{x_1}  & \mathbf{x_2} & ... & \mathbf{x_N} \end{pmatrix} 
+$$
+\mathbf{X} =\begin{pmatrix} \mathbf{x_1}  & \mathbf{x_2} & ... & \mathbf{x_N} \end{pmatrix}
 $$
 $$
 \mathbf{Y}=\begin{pmatrix} \mathbf{y_1}  & \mathbf{y_2} & ... & \mathbf{y_N} \end{pmatrix}
@@ -18,10 +18,10 @@ $$
 Where $\mathbf{x_i}$ and $\mathbf{y_i}$ are the data column vectors. Then the gradient equations become:
 $$
 \mathbf{P} = softmax(\mathbf{W} \cdot \mathbf{X} + \mathbf{b}\cdot \begin{bmatrix}
-1 & 1 & ... & 1 \end{bmatrix}) 
+1 & 1 & ... & 1 \end{bmatrix})
 $$
-$$ 
-\frac{\partial\mathbf{J}}{\partial\mathbf{W}} = \frac{1}{|B|} (\mathbf{P}-\mathbf{Y})\cdot \mathbf{X^T} + 2\lambda \cdot \mathbf{W} 
+$$
+\frac{\partial\mathbf{J}}{\partial\mathbf{W}} = \frac{1}{|B|} (\mathbf{P}-\mathbf{Y})\cdot \mathbf{X^T} + 2\lambda \cdot \mathbf{W}
 $$
 
 $$
@@ -35,7 +35,7 @@ To chech the correctness of the gradients I computed the *Frobenious Norm*($\| \
 
 In the newxt subsections are presented the resutls for the different experiments.
 
-## Experiment 1 
+## Experiment 1
 
 
 | $\lambda$ | eta | batches | epochs | Performance      |
@@ -54,8 +54,6 @@ The loss of regularization causes also the noise in the learned prototypes, beca
 ![Learned prototypes in Experiment 1.\label{fig:e1_2}](../Result_Pics/b100e40eta1la0proto.pdf){ width=80% }
 
 
-\newpage
-
 ## Experiment 2
 
 
@@ -72,7 +70,6 @@ On the loss plot we can see the difference between test and validation dataset w
 
 ![Learned prototypes in Experiment 2.\label{fig:e2_2}](../Result_Pics/b100e40eta01la0proto.pdf){ width=80% }
 
-\newpage
 
 
 ## Experiment 3
@@ -85,16 +82,11 @@ On the loss plot we can see the difference between test and validation dataset w
 
 The results are show in Figure \ref{fig:e3_1} and \ref{fig:e3_2}. By increasing the regularization term we get smoother prototypes, and also a more stable performance. By looking at the loss plot, we can see how it quickly becomes steady for both validation and test data.
 
-The more stable results are obtained through the regularization at the expenses of the performance, because regulariziing constraints the parameter space a little.
-
 ![Loss curve for Experiment 3, blue test data and in orage the validation data.\label{fig:e3_1}](../Result_Pics/b100e40eta01la_1.pdf){ width=80% }
 
+The more stable results are obtained through the regularization at the expenses of the performance, because regulariziing constraints the parameter space a little.
+
 ![Learned prototypes in Experiment 3.\label{fig:e3_2}](../Result_Pics/b100e40eta01la_1proto.pdf){ width=80% }
-
-
-\newpage
-
-
 
 ## Experiment 4
 
@@ -110,11 +102,3 @@ The results are show in Figure \ref{fig:e2_1} and \ref{fig:e2_2}. Here we can im
 ![Loss curve for Experiment 4, blue test data and in orage the validation data.\label{fig:e4_1}](../Result_Pics/b100e40eta01la1_.pdf){ width=80% }
 
 ![Learned prototypes in Experiment 4.\label{fig:e4_2}](../Result_Pics/b100e40eta01la1_proto.pdf){ width=80% }
-
-
-
-
-
-\newpage
-
-

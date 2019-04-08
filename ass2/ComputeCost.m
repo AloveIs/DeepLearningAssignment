@@ -13,7 +13,7 @@ function J = ComputeCost(X, Y, W, b, lambda)
     P = EvaluateClassifier(X, W, b);
    
     %compute the cross-entropy part
-    J = -mean(log(sum(Y .* P,1)));
+    J = -mean(log(sum(Y .* P{2},1)));
     
     J2 = compute_regularization(W,lambda);
     

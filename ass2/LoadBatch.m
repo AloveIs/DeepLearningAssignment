@@ -21,22 +21,22 @@ function [X, Y, y] = LoadBatch(filename, debug)
 
     % load batch
     Batch = load(filename);
-    
+
     if debug
         fprintf("The batch has the following fields:\n");
         disp(Batch);
     end
-    
-    
+
+
     %% First extract the labels
     % Number of classes
     K = 10;
-    
+
     y = double(Batch.labels' + 1);
-    
+
     % Number of samples
     N = size(y,2);
-    
+
     Y = zeros(K,N);
     % find indexes to set to one and set them              %Y = ind2vec(y)
     idx = sub2ind(size(Y), y, [1:N]);
@@ -48,15 +48,15 @@ function [X, Y, y] = LoadBatch(filename, debug)
         fprintf("In one-hot encoding is:\n");
         disp(Y(:,1:20));
     end
-    
+
     %% Normalize data
     X = double(Batch.data)';
-    
+
     mean_X = mean(X, 2);
     std_X = std(X, 0, 2);
-    
+
     X = X - repmat(mean_X, [1, size(X, 2)]);
     X = X ./ repmat(std_X, [1, size(X, 2)]);
-    
-    
+
+
 end

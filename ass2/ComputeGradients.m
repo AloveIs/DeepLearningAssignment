@@ -16,10 +16,12 @@ function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, b, lambda)
     batch_size = double(size(X,2));
     
     % compute g as defined on the slides
-    g = -(Y-P);
+    g = -(Y-P{2});
     
-    H = W{1} * X + b{1} *  ones(1,size(X,2));
-    H = max(0,H);
+    %H = W{1} * X + b{1} *  ones(1,size(X,2));
+    %H = max(0,H);
+    
+    H = P{1};
     
     grad_b2 = 1.0/ batch_size * sum(g,2);
     grad_W2 = 1.0/ batch_size * (g * H') + 2 * lambda * W{2};
