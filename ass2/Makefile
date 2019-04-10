@@ -1,4 +1,4 @@
-FILES = Assignment2.m LoadBatch.m EvaluateClassifier.m ComputeCost.m MiniBatchGD.m
+FILES = Assignment2.m ComputeCost.m ComputeGradients.m EvaluateClassifier.m LoadBatch.m MiniBatchGD.m
 
 all: merged_code.m report.pdf
 

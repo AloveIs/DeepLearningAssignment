@@ -31,18 +31,17 @@ First I tested the network using the parameters in the Assignment instruction. M
 
 
 \begin{figure}[h]
+\centering
 \begin{subfigure}{.4\textwidth}
-  \centering
   \includegraphics[width=1\linewidth]{fig3_2s.pdf}
   \caption{Loss function.}
 \end{subfigure}%
 \begin{subfigure}{.4\textwidth}
-  \centering
   \includegraphics[width=1\linewidth]{fig3_1s.pdf}
   \caption{Cost function.}
 \end{subfigure}
+~
 \begin{subfigure}{.4\textwidth}
-  \centering
   \includegraphics[width=1\linewidth]{fig3_3s.pdf}
   \caption{Performance function.}
 \end{subfigure}
@@ -51,18 +50,17 @@ First I tested the network using the parameters in the Assignment instruction. M
 \end{figure}
 
 \begin{figure}[h]
-\begin{subfigure}{.4\textwidth}
   \centering
+\begin{subfigure}{.4\textwidth}
   \includegraphics[width=1\linewidth]{fig4_2s.pdf}
   \caption{Loss function.}
 \end{subfigure}%
 \begin{subfigure}{.4\textwidth}
-  \centering
   \includegraphics[width=1\linewidth]{fig4_1s.pdf}
   \caption{Cost function.}
 \end{subfigure}
+~
 \begin{subfigure}{.4\textwidth}
-  \centering
   \includegraphics[width=1\linewidth]{fig4_3s.pdf}
   \caption{Performance function.}
 \end{subfigure}
@@ -74,24 +72,63 @@ First I tested the network using the parameters in the Assignment instruction. M
 
 # $\lambda$ search
 
-I have done a preliminary search for $\lambda$ in the range $(10^{-5},10^{1})$ for a total of 30 samples. The result is shown in Figure \ref{fig:lambda1}.
+To find the best fitting value for the hyperparameter $\lambda$ I first fixed the other hyper parametrs as follows: $eta_min=1e-5 \ ,\ eta_max1e-1 \ ,\ n_s = 900$ and run for each lambda for 2 cycles.
 
-Then with a second, more focused, search in the interval $(10^{-5},10^{1})$, I obtained the results shown in Figure \ref{fig:lambda2}.
+I have done a preliminary search for $\lambda$ in the range $(10^{-8},10^{-1})$ for a total of 100 samples. The result is shown in Figure \ref{fig:lambda1}.
 
+Then with a second, more focused, search in the interval $(10^{-4},10^{-2})$ etching 60 samples. I obtained the results shown in Figure \ref{fig:lambda2}.
 
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=1\linewidth]{lambda_coarse.pdf}
-  \caption{Results for different lambdas.}
-  \label{fig:lambda1}
-\end{figure}
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=1\linewidth]{fig4_3s.pdf}
-  \caption{Results for different lambdas.}
-  \label{fig:lambda2}
+\centering
+\begin{subfigure}{.45\textwidth}
+\includegraphics[width=1\linewidth]{lambda_coarse.pdf}
+\caption{Performance on the vaidation set for the coarse search of $\lambda$.}
+\label{fig:lambda1}
+\end{subfigure}\hspace{5mm}%
+\begin{subfigure}{.45\textwidth}
+\includegraphics[width=1\linewidth]{lambda_fine.pdf}
+\caption{Performance on the validation set for the finer search of $\lambda$.}
+\label{fig:lambda2}
+\end{subfigure}
+\caption{Result of search for the best hyperparameter $\lambda$.}
 \end{figure}
+
+In the table below are shown the results on the validation set for the best 3 values of $\lambda$.
+
+| $\lambda$ | Performance on Validation    |
+|:---------:|:----------------------------:|
+| 0.000305227 |51.78\%                     |
+| 0.000141724 |51.70\%                     |
+| 0.000928504 |51.70\%                     |
 
 
 # Full data with best $\lambda$
+
+Now I can apply the best found $\lambda$ to the whole dataset but 1000 samples for validation, and test the final result on the test data.
+The result is shown in the following table, and the loss and accuracy are shown in Figure \ref{fig:best}.
+
+| $\lambda$ | Performance on Test data    |
+|:---------:|:----------------------------:|
+| 0.000305227 |51.76\%                     |
+
+
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{.45\textwidth}
+\includegraphics[width=1\linewidth]{best_l_cost.pdf}
+\caption{Cost function.}
+\end{subfigure}\hspace{5mm}%
+\begin{subfigure}{.45\textwidth}
+\includegraphics[width=1\linewidth]{best_l_loss.pdf}
+\caption{Loss function.}
+\end{subfigure}\hspace{5mm}
+~
+\begin{subfigure}{.45\textwidth}
+\includegraphics[width=1\linewidth]{best_l_accuracy.pdf}
+\caption{Accuracy function.}
+\end{subfigure}
+\caption{Tracked quantities during training with the best value of $\lambda$.}
+\label{fig:best}
+\end{figure}
