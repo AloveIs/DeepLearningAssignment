@@ -57,6 +57,7 @@ First I tested the network using the parameters in the Assignment instruction. M
 \end{subfigure}%
 \begin{subfigure}{.4\textwidth}
   \includegraphics[width=1\linewidth]{fig4_1s.pdf}
+
   \caption{Cost function.}
 \end{subfigure}
 ~
@@ -77,7 +78,6 @@ To find the best fitting value for the hyperparameter $\lambda$ I first fixed th
 I have done a preliminary search for $\lambda$ in the range $(10^{-8},10^{-1})$ for a total of 100 samples. The result is shown in Figure \ref{fig:lambda1}.
 
 Then with a second, more focused, search in the interval $(10^{-4},10^{-2})$ etching 60 samples. I obtained the results shown in Figure \ref{fig:lambda2}.
-
 
 \begin{figure}[h]
 \centering

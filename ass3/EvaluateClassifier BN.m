@@ -9,19 +9,28 @@
 %
 function P = EvaluateClassifier(X, W, b)
     % evaluate linear part
-    s1 = W{1} * X + b{1} *  ones(1,size(X,2));
     
-    Z = max(0,s1);
+    layers = numel(W);
+    z = {};
     
-    s2 = W{2} * Z + b{2} *  ones(1,size(X,2));
+    for l = 1 : layers
+        if l == 1
+            s = W{l} * X + b{l} *  ones(1,size(X,2));
+        else
+            s = W{l} * z{l-1} + b{l} *  ones(1,size(z{l-1},2));
+        end
+        if l ~= layers
+            z{l} = max(0,s);
+        end
+    end
     
     % compute the softmax:
     % - numerators of the softmax:
-    E = exp(s2);
+    E = exp(s);
     % - denominators of the softmax:
-    D = ones(size(W{2},1),1) * sum(E,1);
-    
+    D = ones(size(E,1),1) * sum(E,1);
+    z{layers} = E./D;
     % Divide each column by their sum
     % to have the softmax
-    P = { Z ,E./D};
+    P = z;
 end

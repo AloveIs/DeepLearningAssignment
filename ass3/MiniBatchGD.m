@@ -46,23 +46,23 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
 
         P = EvaluateClassifier(X_batch, W, b);
         [grad_W, grad_b] = ComputeGradients(X_batch, Y_batch, P, W,b, lambda);
-
-        W{1} = W{1} - eta * grad_W{1};
-        b{1} = b{1} - eta * grad_b{1};
-        W{2} = W{2} - eta * grad_W{2};
-        b{2} = b{2} - eta * grad_b{2};
-              
-        %save statistics
-        if mod(rounds,100)==0
-        C(plot_idx,1) = ComputeCost(X, Y, W, b, lambda);
-        C(plot_idx,2) = ComputeCost(Xval, Yval, W, b, lambda);
-        C(plot_idx,3) = ComputeCost(X, Y, W, b, 0);
-        C(plot_idx,4) = ComputeCost(Xval, Yval, W, b, 0);
         
-        A(plot_idx,1) = compute_accuracy(X, Y, W, b);
-        A(plot_idx,2) = compute_accuracy(Xval, Yval, W, b);
-        etas(plot_idx) = eta;
-        plot_idx = 1 + plot_idx;
+        for k=1:length(W)
+            W{k} = W{k} - eta * grad_W{k};
+            b{k} = b{k} - eta * grad_b{k};
+        end
+        
+        %save statistics each 100 iterations
+        if mod(rounds,100)==0
+            C(plot_idx,1) = ComputeCost(X, Y, W, b, lambda);
+            C(plot_idx,2) = ComputeCost(Xval, Yval, W, b, lambda);
+            C(plot_idx,3) = ComputeCost(X, Y, W, b, 0);
+            C(plot_idx,4) = ComputeCost(Xval, Yval, W, b, 0);
+
+            A(plot_idx,1) = compute_accuracy(X, Y, W, b);
+            A(plot_idx,2) = compute_accuracy(Xval, Yval, W, b);
+            etas(plot_idx) = eta;
+            plot_idx = 1 + plot_idx;
         end
         %update eta
         eta = eta + sign*eta_step;
@@ -77,14 +77,23 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     % plot loss and accuracy of the network
     x = 1 : plot_idx-1;
-    plot(100*x, C(x,1),x, C(x,2));
+    plot(100*x, C(x,1),100*x, C(x,2));
+    xlabel("Step")
+    ylabel("Loss")
+    saveas(gcf,'best_l_loss.pdf')
     figure();
-    plot(x, C(x,3),x, C(x,4));
+    plot(100*x, C(x,3),100*x, C(x,4));
+    xlabel("Step")
+    ylabel("Cost")
+    saveas(gcf,'best_l_cost.pdf')
     figure();
-    plot(x, A(x,1),x, A(x,2));
+    plot(100*x, A(x,1),100*x, A(x,2));
+    xlabel("Step")
+    ylabel("Accuracy")
+    saveas(gcf,'best_l_accuracy.pdf')
     %figure();
     %plot(x-1, etas);
-    save("test_fig3","C","A");
+    %save("test_fig3","C","A");
     % set return values
     Wstar = W;
     bstar = b;
@@ -98,7 +107,7 @@ y = vec2ind(Y);
 
 P = EvaluateClassifier(X, W, b);
 
-[~, argmax] = max(P{2});
+[~, argmax] = max(P{end});
 
 R = argmax == y;
 
