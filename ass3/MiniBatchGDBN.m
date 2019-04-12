@@ -6,7 +6,7 @@
 % is the regularization factor in the cost function and GDparams is an object containing the parameter values n batch, eta
 % and n epochs
 %
-function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
+function [Wstar, bstar] = MiniBatchGDBN(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     batch_size = int32(GDparams.n_batch);
     plot_idx = 1;

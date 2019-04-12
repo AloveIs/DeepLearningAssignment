@@ -8,14 +8,14 @@
 % • J is a scalar corresponding to the sum of the loss of the network’s
 % predictions for the images in X relative to the ground truth labels and
 % the regularization term on W.
-function J = ComputeCost(X, Y, W, b, lambda)
+function J = ComputeCostBN(X, Y, NetParams, lambda)
     % get the evaluation of the current parameters for the batch
-    P = EvaluateClassifier(X, W, b);
+    P = EvaluateClassifierBN(X, NetParams);
    
     %compute the cross-entropy part
-    J = -mean(log(sum(Y .* P{end},1)));
+    J = -mean(log(sum(Y .* P{end,end},1)));
     
-    J2 = compute_regularization(W,lambda);
+    J2 = compute_regularization(NetParams.W,lambda);
     
     % add the regularizing term
     J =  J + lambda*J2;

@@ -94,21 +94,46 @@ end
 %% batch normalization
 %% training and testing the model
 if true
-    m = [50,50];
+    m = [10,10,10];
     GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
+    lambda = 1;
     
-    [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    %[X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
     NetParams = initialize_paramsBN(K,m,d);
-    NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
+    P  = EvaluateClassifierBN(X_train(:,1:10),NetParams);
+    %C  = ComputeCostBN(X_train(:,1:40),Y_train(:,1:40),NetParams,1);
+    
+    grads = ComputeGradsNumSlow(X_train(:,1:10), Y_train(:,1:10), NetParams, lambda, 0.00001);
+    grad_b = grads.b;
+    grad_W = grads.W;
+    
+    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:10), Y_train(:,1:10), P, NetParams, lambda);
+    
+    for i = 1 : numel(grad_W_mine)
+        if i == numel(grad_W_mine)
+                fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
+        max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+        max(abs(grad_b_mine{i}-grad_b{i})));
+        else
+        fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \ngamma(%d) %e \nbeta(%d) %e\n\n",i,  ...
+        max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+        max(abs(grad_b_mine{i}-grad_b{i})),...
+        i,max(abs(grad_gammas_mine{i}-grads.gammas{i})),...
+        i,max(abs(grad_betas_mine{i}-grads.betas{i}))...
+        );
+        end
+    end
+    
+    %NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
 
     % classification using best parameters
-    P = EvaluateClassifierBN(X_test, NetParams_star);
-    [argvalue, argmax] = max(P{end});
+    %P = EvaluateClassifierBN(X_test, NetParams_star);
+    %[argvalue, argmax] = max(P{end,3});
     % compare with ground truth
-    R = argmax == y_test;
+    %R = argmax == y_test;
 
-    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+    %fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
 
 end
 
