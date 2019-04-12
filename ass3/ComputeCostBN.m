@@ -13,7 +13,7 @@ function J = ComputeCostBN(X, Y, NetParams, lambda)
     P = EvaluateClassifierBN(X, NetParams);
    
     %compute the cross-entropy part
-    J = -mean(log(sum(Y .* P{end,end},1)));
+    J = -mean(log(sum(Y .* P{end,3},1)));
     
     J2 = compute_regularization(NetParams.W,lambda);
     

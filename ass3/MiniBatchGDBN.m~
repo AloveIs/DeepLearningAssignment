@@ -6,7 +6,7 @@
 % is the regularization factor in the cost function and GDparams is an object containing the parameter values n batch, eta
 % and n epochs
 %
-function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval)
+function [Wstar, bstar] = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval)
     
     batch_size = int32(GDparams.n_batch);
     plot_idx = 1;
@@ -45,24 +45,23 @@ function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval
         start_index = start_index + batch_size;
 
         P = EvaluateClassifierBN(X_batch, NetParams);
-        [grad_W, grad_b,grad_gammas, grad_betas] = ComputeGradientsBN(X_batch, Y_batch, P,NetParams, lambda);
+        [grad_W, grad_b] = ComputeGradientsBN(X_batch, Y_batch, P,NetParams, lambda);
         
-        for k=1:length(NetParams.W)
+        for k=1:length(W)
             NetParams.W{k} = NetParams.W{k} - eta * grad_W{k};
             NetParams.b{k} = NetParams.b{k} - eta * grad_b{k};
             
-            if k < length(NetParams.W)
-                NetParams.gammas{k} = NetParams.gammas{k}- eta *grad_gammas{k} ;      
-                NetParams.betas{k}= NetParams.betas{k} - eta * grad_betas{k};
-            end
+            if k == length(W)
+            NetParams.gammas{k}
+            NetParams.betas{k}
         end
         
         %save statistics each 100 iterations
         if mod(rounds,100)==0
-            C(plot_idx,1) = ComputeCostBN(X, Y, NetParams, lambda);
-            C(plot_idx,2) = ComputeCostBN(Xval, Yval, NetParams, lambda);
-            C(plot_idx,3) = ComputeCostBN(X, Y, NetParams, 0);
-            C(plot_idx,4) = ComputeCostBN(Xval, Yval, NetParams, 0);
+            C(plot_idx,1) = ComputeCostBN(X, Y, W, b, lambda);
+            C(plot_idx,2) = ComputeCostBN(Xval, Yval, W, b, lambda);
+            C(plot_idx,3) = ComputeCostBN(X, Y, W, b, 0);
+            C(plot_idx,4) = ComputeCostBN(Xval, Yval, W, b, 0);
 
             A(plot_idx,1) = compute_accuracy(X, Y,NetParams);
             A(plot_idx,2) = compute_accuracy(Xval, Yval,NetParams);
@@ -100,7 +99,8 @@ function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval
     %plot(x-1, etas);
     %save("test_fig3","C","A");
     % set return values
-    
+    Wstar = W;
+    bstar = b;
 end
 
 
@@ -109,7 +109,7 @@ function acc = compute_accuracy(X,Y,NetParams)
 
 y = vec2ind(Y);
 
-P = EvaluateClassifierBN(X, NetParams);
+P = EvaluateClassifier(X, NetParams);
 
 [~, argmax] = max(P{end,3});
 

@@ -51,8 +51,6 @@ function [grad_W, grad_b, grad_gammas, grad_betas] = ComputeGradientsBN(X, Y, P,
         sigma_1 = P{l,5}.^(-0.5);
         sigma_2 = P{l,5}.^(-1.5);
         
-        size(sigma_1)
-        
         G1 = g .* (sigma_1 * ones(1,batch_size));
         G2 = g .* (sigma_2 * ones(1,batch_size));
         D = P{l,1} - P{l,4} * ones(1,batch_size);
