@@ -10,6 +10,8 @@ test_data = 'test_batch.mat';
 [X_val, Y_val, y_val] = LoadBatch(val_data);
 [X_test, Y_test, y_test] = LoadBatch(test_data);
 
+fprintf("Loaded data\n");
+
 N = size(y_train,2);
 K = size(Y_train,1);
 d = size(X_train,1);
@@ -37,10 +39,12 @@ if false
     NetParams.use_bn = false;
     
     grads = ComputeGradsNumSlow(X_train(:,1:10), Y_train(:,1:10), NetParams, lambda, 0.00001);
+    fprintf("Computed slow gradient\n");
     grad_b = grads.b;
     grad_W = grads.W;
     
     [grad_W_mine, grad_b_mine] = ComputeGradients(X_train(:,1:10), Y_train(:,1:10), P, W, b, lambda);
+    fprintf("Computed my gradient\n");
     
     for i = 1 : numel(grad_W_mine)
         fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
@@ -179,28 +183,30 @@ end
 
 %% batch normalization
 %% training and testing the model
-if false
-    m = [10,10,10];
+if true
+    m = [10];
     GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
-    lambda = 1;
+    lambda = 0;
     
     %[X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
     NetParams = initialize_paramsBN(K,m,d);
-    P  = EvaluateClassifierBN(X_train(:,1:10),NetParams);
+    P  = EvaluateClassifierBN(X_train(:,1:12),NetParams);
+    
     %C  = ComputeCostBN(X_train(:,1:40),Y_train(:,1:40),NetParams,1);
     
-    grads = ComputeGradsNumSlow(X_train(:,1:10), Y_train(:,1:10), NetParams, lambda, 0.00001);
+    grads = ComputeGradsNumSlow(X_train(:,1:12), Y_train(:,1:12), NetParams, lambda, 0.00001);
+    fprintf("Computed slow gradient\n");
     grad_b = grads.b;
     grad_W = grads.W;
     
-    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:10), Y_train(:,1:10), P, NetParams, lambda);
-    
+    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:12), Y_train(:,1:12), P, NetParams, lambda);
+    fprintf("Computed my gradient\n");
     for i = 1 : numel(grad_W_mine)
         if i == numel(grad_W_mine)
-                fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
-        max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
-        max(abs(grad_b_mine{i}-grad_b{i})));
+            fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
+                max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+                max(abs(grad_b_mine{i}-grad_b{i})));
         else
         fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \ngamma(%d) %e \nbeta(%d) %e\n\n",i,  ...
         max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
@@ -223,7 +229,7 @@ if false
 
 end
 
-if true
+if false
     
     m = [50, 30, 20, 20, 10, 10, 10, 10];
     GDparams.n_step = 2 * 450;

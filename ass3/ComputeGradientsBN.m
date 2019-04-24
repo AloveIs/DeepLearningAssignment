@@ -26,7 +26,7 @@ function [grad_W, grad_b, grad_gammas, grad_betas] = ComputeGradientsBN(X, Y, P,
     grad_betas = {};
     % compute g as defined on the slides
     % for lest layer
-    g = -(Y-P{end,3});
+    g = -(Y-P{l,3});
 
     %last layer
     H = P{l-1,3};
@@ -52,10 +52,11 @@ function [grad_W, grad_b, grad_gammas, grad_betas] = ComputeGradientsBN(X, Y, P,
         sigma_2 = P{l,5}.^(-1.5);
         
         G1 = g .* (sigma_1 * ones(1,batch_size));
+        
         G2 = g .* (sigma_2 * ones(1,batch_size));
         D = P{l,1} - P{l,4} * ones(1,batch_size);
         c = (G2 .* D) * ones(batch_size,1);
-        g = G1 - (1/batch_size) * (G1 * ones(batch_size,1))* ones(1,batch_size) ...
+        g = G1 - (1/batch_size) * (G1 * ones(batch_size,1)) ...%* ones(1,batch_size) ...
             - (1/batch_size) * (D .* (c * ones(1,batch_size)));
         
         % end batch norm back pass
@@ -74,7 +75,6 @@ function [grad_W, grad_b, grad_gammas, grad_betas] = ComputeGradientsBN(X, Y, P,
             g = (W{l}' * g);
             g(H==0) = 0;
         end
-
 
         l = l - 1;
     end

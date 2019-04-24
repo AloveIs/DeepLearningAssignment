@@ -9,7 +9,7 @@
 %
 function P = EvaluateClassifierBN(X, NetParams)
     % evaluate linear part
-    eps = 1e-14;
+    eps = 1e-15;
     layers = numel(NetParams.W);
     z = {};
     
@@ -17,7 +17,7 @@ function P = EvaluateClassifierBN(X, NetParams)
         if l == 1
             s = NetParams.W{l} * X + NetParams.b{l} *  ones(1,size(X,2));
         else
-            s = NetParams.W{l} * z{l-1} + NetParams.b{l} *  ones(1,size(z{l-1},2));
+            s = NetParams.W{l} * z{l-1,3} + NetParams.b{l} *  ones(1,size(z{l-1,3},2));
         end
         
         if l ~= layers
@@ -28,17 +28,20 @@ function P = EvaluateClassifierBN(X, NetParams)
             
             z{l,5} = (sum((s.^2),2))/size(s,2) + eps;
             s = s ./ (sqrt(z{l,5}* ones(1,size(s,2))));
-            
+            z{l,2} = s;
             % apply gamma and beta
-            
+                        
             s = (NetParams.gammas{l}* ones(1,size(s,2))) .* s;
             s = s + NetParams.betas{l} *  ones(1,size(s,2));
             
-            z{l,2} = s;
+            z{l,6} = s;
+            
+            %apply relu
             z{l,3} = max(0,s);
         end
     end
     
+    %last layer
     z{layers,1} = s;
     % compute the softmax:
     % - numerators of the softmax:
@@ -54,7 +57,8 @@ end
 
 %
 % (l,1) -> Wx+b              s
-% (l,2) -> batch_norm(Wx+b)  s_tilde
+% (l,2) -> batch_norm(Wx+b)  s_hat
 % (l,3) -> ReLU(...)         X
 % (l,4) -> means
 % (l,5) -> variances
+% (l,6) -> gamma s^ + beta   s_tilde
