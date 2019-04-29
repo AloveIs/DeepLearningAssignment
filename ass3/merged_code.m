@@ -4,6 +4,8 @@
 % prepare the environment and constants
 addpath('../ass1/Datasets/cifar-10-batches-mat');
 
+close all;
+
 train_data = 'data_batch_1.mat';
 val_data = 'data_batch_2.mat';
 test_data = 'test_batch.mat';
@@ -13,13 +15,15 @@ test_data = 'test_batch.mat';
 [X_val, Y_val, y_val] = LoadBatch(val_data);
 [X_test, Y_test, y_test] = LoadBatch(test_data);
 
+fprintf("Loaded data\n");
+
 N = size(y_train,2);
 K = size(Y_train,1);
 d = size(X_train,1);
 %number of hidden nodes
 m = [50,50];
 
-lambda = 0.0001;
+lambda = 0.005;
 
 GDparams.n_batch = 100;
 GDparams.eta = 0.001;
@@ -30,6 +34,7 @@ GDparams.n_cycles = 1;
 %[W , b] = initialize_params(K,m,d);
 %P  = EvaluateClassifier(X_train(:,1:7),W,b);
 %[grad_W_mine, grad_b_mine] = ComputeGradients(X_train(:,1:7), Y_train(:,1:7), P, W, b, lambda);
+%% multi layer network
 %% check gradient
 if false
     [W , b] = initialize_params(K,m,d);
@@ -40,10 +45,12 @@ if false
     NetParams.use_bn = false;
     
     grads = ComputeGradsNumSlow(X_train(:,1:10), Y_train(:,1:10), NetParams, lambda, 0.00001);
+    fprintf("Computed slow gradient\n");
     grad_b = grads.b;
     grad_W = grads.W;
     
     [grad_W_mine, grad_b_mine] = ComputeGradients(X_train(:,1:10), Y_train(:,1:10), P, W, b, lambda);
+    fprintf("Computed my gradient\n");
     
     for i = 1 : numel(grad_W_mine)
         fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
@@ -75,8 +82,8 @@ end
 
 
 %% training and testing the 9-layer model
-if true
-    GDparams.n_step = 2 * 450;
+if false
+    GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
     
     m = [50, 30, 20, 20, 10, 10, 10, 10];
@@ -94,9 +101,209 @@ if true
 
 end
 
-%% serach lambda
+%% batch normalization
+%% training and testing the model
 if false
-    GDparams.n_step = 900;
+    m = [10,10,10];
+    GDparams.n_step = 5 * 450;
+    GDparams.n_cycles = 2;
+    lambda = 1;
+    
+    %[X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    NetParams = initialize_paramsBN(K,m,d);
+    P  = EvaluateClassifierBN(X_train(:,1:100),NetParams);
+    %C  = ComputeCostBN(X_train(:,1:40),Y_train(:,1:40),NetParams,1);
+    
+    grads = ComputeGradsNumSlow(X_train(:,1:100), Y_train(:,1:100), NetParams, lambda, 0.0001);
+    grad_b = grads.b;
+    grad_W = grads.W;
+    
+    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:100), Y_train(:,1:100), P, NetParams, lambda);
+    
+    for i = 1 : numel(grad_W_mine)
+        if i == numel(grad_W_mine)
+                fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
+        max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+        max(abs(grad_b_mine{i}-grad_b{i})));
+        else
+        fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \ngamma(%d) %e \nbeta(%d) %e\n\n",i,  ...
+        max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+        max(abs(grad_b_mine{i}-grad_b{i})),...
+        i,max(abs(grad_gammas_mine{i}-grads.gammas{i})),...
+        i,max(abs(grad_betas_mine{i}-grads.betas{i}))...
+        );
+        end
+    end
+    
+    %NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    %P = EvaluateClassifierBN(X_test, NetParams_star);
+    %[argvalue, argmax] = max(P{end,3});
+    % compare with ground truth
+    %R = argmax == y_test;
+
+    %fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
+
+if false
+    lambda = 0.005;
+    m = [50,50];
+    GDparams.n_step = 5 * 450;
+    GDparams.n_cycles = 2;
+    
+    [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    [W , b] = initialize_params(K,m,d);
+    [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifier(X_test, Wstar, bstar);
+    [argvalue, argmax] = max(P{end});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
+
+
+%% training and testing the 9-layer model
+if false
+    lambda = 0.005;
+    GDparams.n_step = 5 * 450;
+    GDparams.n_cycles = 2;
+    
+    m = [50, 30, 20, 20, 10, 10, 10, 10];
+    [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    [W , b] = initialize_params(K,m,d);
+    [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifier(X_test, Wstar, bstar);
+    [argvalue, argmax] = max(P{end});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
+
+%% batch normalization
+%% training and testing the model
+if false
+    m = [10];
+    GDparams.n_step = 5 * 450;
+    GDparams.n_cycles = 2;
+    lambda = 0;
+    
+    %[X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    NetParams = initialize_paramsBN(K,m,d);
+    P  = EvaluateClassifierBN(X_train(:,1:12),NetParams);
+    
+    %C  = ComputeCostBN(X_train(:,1:40),Y_train(:,1:40),NetParams,1);
+    
+    grads = ComputeGradsNumSlow(X_train(:,1:12), Y_train(:,1:12), NetParams, lambda, 0.00001);
+    fprintf("Computed slow gradient\n");
+    grad_b = grads.b;
+    grad_W = grads.W;
+    
+    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:12), Y_train(:,1:12), P, NetParams, lambda);
+    fprintf("Computed my gradient\n");
+    for i = 1 : numel(grad_W_mine)
+        if i == numel(grad_W_mine)
+            fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \n\n",i,  ...
+                max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+                max(abs(grad_b_mine{i}-grad_b{i})));
+        else
+        fprintf("Max abs divergence is: \n W(%d) %e \nb(%d) %e \ngamma(%d) %e \nbeta(%d) %e\n\n",i,  ...
+        max(max(abs(grad_W_mine{i}-grad_W{i}))),i, ...
+        max(abs(grad_b_mine{i}-grad_b{i})),...
+        i,max(abs(grad_gammas_mine{i}-grads.gammas{i})),...
+        i,max(abs(grad_betas_mine{i}-grads.betas{i}))...
+        );
+        end
+    end
+    
+    %NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    %P = EvaluateClassifierBN(X_test, NetParams_star);
+    %[argvalue, argmax] = max(P{end,3});
+    % compare with ground truth
+    %R = argmax == y_test;
+
+    %fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
+
+if false
+    
+    m = [50, 30, 20, 20, 10, 10, 10, 10];
+    GDparams.n_step = 2 * 450;
+    GDparams.n_cycles = 2;
+    lambda = 0.005;
+    
+    [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    NetParams = initialize_paramsBN(K,m,d);
+
+    
+    NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifierBN(X_test, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+    [argvalue, argmax] = max(P{end,3});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
+
+%% sensitivity
+
+if false
+    
+    m = [50, 50];
+    GDparams.n_step = 2 * 450;
+    GDparams.n_cycles = 5;
+    lambda = 0.005;
+    
+    
+    sig = 1e-4;
+    
+    [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    NetParams = initialize_paramsBN2(K,m,d, sig);
+
+    NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifierBN(X_test, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+    [argvalue, argmax] = max(P{end,3});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+    pause;
+    
+    [W , b] = initialize_params2(K,m,d, sig);
+    [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifier(X_test, Wstar, bstar);
+    [argvalue, argmax] = max(P{end});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
+
+
+%% serach lambda
+if true
+    GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
 
 
@@ -104,7 +311,7 @@ if false
     [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
 
     load('lambda_coarse.mat','L');
-    l_min = -8;
+    l_min = -5;
     l_max = -1;
 
     
@@ -122,15 +329,28 @@ if false
 
         fprintf("##### %d )l = %f lambda = %f",i,l,10^l);
         l = 10^l;
-        [W , b] = initialize_params(K,m,d);
-        [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, l, X_val, Y_val);
+        NetParams = initialize_paramsBN(K,m,d);
+        NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, l, X_val, Y_val);
         close all;
-        P = EvaluateClassifier(X_val, Wstar, bstar);
-        [argvalue, argmax] = max(P{2});
+   
+        % classification using best parameters
+        P = EvaluateClassifierBN(X_val, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+        [argvalue, argmax] = max(P{end,3});
+        % compare with ground truth
         R = argmax == y_val;
 
-        L(i,:) = [l, (sum(R))/size(Y_val,2)*100];
-        fprintf("%d) Accuracy on test data is : %f",i,L(i,2));
+        fprintf("Accuracy on val data is : %f",(sum(R))/size(Y_val,2)*100);
+        
+        
+        P2 = EvaluateClassifierBN(X_test, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+        [argvalue, argmax] = max(P2{end,3});
+        % compare with ground truth
+        R2 = argmax == y_test;
+
+        fprintf("Accuracy on test data is : %f",(sum(R2))/size(Y_test,2)*100);
+        
+        L(i,:) = [l, (sum(R))/size(Y_val,2)*100, (sum(R2))/size(Y_test,2)*100];
+        %fprintf("%d) Accuracy on test data is : %f",i,L(i,2));
         save('lambda_coarse.mat','L');
         toc;
     end
@@ -234,6 +454,63 @@ function [W , b] = initialize_params(K,m,d)
     b{i} = 1.0/sqrt(m(end)) * randn(K,1);
 end
 
+
+function [W , b] = initialize_params2(K,m,d, sig)
+    
+    W = {};
+    b = {};
+    
+    i = 1;
+    while i <= size(m,2)
+        %input check
+        if i ==1
+           W{i} = sig * randn(m(i),d);
+           b{i} = sig * randn(m(i),1);
+        else
+           W{i} = sig * randn(m(i),m(i-1)); 
+           b{i} = sig * randn(m(i),1);
+        end
+        i = i + 1;
+    end
+    W{i} = sig * randn(K,m(end));
+    b{i} = sig * randn(K,1);
+end
+
+
+%% initialize_params
+%
+% Initialize the values for W and b and all the batch normalization
+% parameters
+%
+function NetParams = initialize_paramsBN(K,m,d)
+    
+    NetParams.use_bn = true;
+    
+    NetParams.W = {};
+    NetParams.b = {};
+    NetParams.gammas = {};
+    NetParams.betas = {};
+    
+    i = 1;
+    while i <= size(m,2)
+        %input check
+        if i ==1
+           NetParams.W{i} = 1.0/sqrt(d) * randn(m(i),d);
+           NetParams.b{i} = 1.0/sqrt(d) * randn(m(i),1);
+        else
+           NetParams.W{i} = 1.0/sqrt(m(i-1)) * randn(m(i),m(i-1)); 
+           NetParams.b{i} = 1.0/sqrt(m(i-1)) * randn(m(i),1);
+        end
+        NetParams.gammas{i} = 1.0/sqrt(m(i)) * randn(m(i),1); 
+        NetParams.betas{i} = 1.0/sqrt(m(i)) * randn(m(i),1);
+        i = i + 1;
+    end
+    NetParams.W{i} = 1.0/sqrt(m(end)) * randn(K,m(end));
+    NetParams.b{i} = 1.0/sqrt(m(end)) * randn(K,1);
+   
+end
+
+
 %% load all data
 function [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data()
     X = [];
@@ -282,7 +559,33 @@ function [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data_2()
     
 end
 
-
+function NetParams = initialize_paramsBN2(K,m,d, sig)
+    
+    NetParams.use_bn = true;
+    
+    NetParams.W = {};
+    NetParams.b = {};
+    NetParams.gammas = {};
+    NetParams.betas = {};
+    
+    i = 1;
+    while i <= size(m,2)
+        %input check
+        if i ==1
+           NetParams.W{i} = sig * randn(m(i),d);
+           NetParams.b{i} = sig * randn(m(i),1);
+        else
+           NetParams.W{i} = sig * randn(m(i),m(i-1)); 
+           NetParams.b{i} = sig * randn(m(i),1);
+        end
+        NetParams.gammas{i} = sig * randn(m(i),1); 
+        NetParams.betas{i} =  sig * randn(m(i),1);
+        i = i + 1;
+    end
+    NetParams.W{i} =  sig * randn(K,m(end));
+    NetParams.b{i} =  sig * randn(K,1);
+   
+end
 \n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Content of file : ComputeCost.m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n
@@ -347,14 +650,14 @@ end\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, b, lambda)
     % compute useful constant
     batch_size = double(size(X,2));
-    
+
     l = numel(W);
     grad_b = {};
     grad_W = {};
     % compute g as defined on the slides
     % for lest layer
     g = -(Y-P{end});
-    
+
     %input to the layer
     H = P{l-1};
 
@@ -364,16 +667,16 @@ function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, b, lambda)
 %     grad_W{l} = 1.0/ batch_size * (g * H') + 2 * lambda * W{l};
 %     grad_b{l} = 1.0/ batch_size * sum(g,2);
 %     l = l - 1;
-    
+
     while l > 1
-        
+
         grad_b{l} = 1.0/ batch_size * sum(g,2);
         grad_W{l} = 1.0/ batch_size * (g * P{l-1}') + 2 * lambda * W{l};
-        
+
         g = (g' * W{l})';
         H = P{l-1};
         g(H==0) = 0;
-  
+
 %         H = P{l};
 %         disp(size(g))
 %         disp(size(W{l}))
@@ -383,10 +686,10 @@ function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, b, lambda)
 %         grad_W{l} = 1.0/ batch_size * (g * P{l-1}') + 2 * lambda * W{l};
         l = l - 1;
     end
-    
+
     grad_b{1} = 1.0/ batch_size * sum(g,2);
     grad_W{1} = 1.0/ batch_size * (g * X') + 2 * lambda * W{1};
-    
+
 %     H = P{1};
 %     
 %     grad_b2 = 1.0/ batch_size * sum(g,2);
@@ -402,8 +705,7 @@ function [grad_W, grad_b] = ComputeGradients(X, Y, P, W, b, lambda)
 %     
 %     grad_b = {grad_b1, grad_b2};
 %     grad_W = {grad_W1, grad_W2};
-end
-\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Content of file : EvaluateClassifier.m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n
 %% EvaluateClassifier
@@ -588,20 +890,21 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     % plot loss and accuracy of the network
     x = 1 : plot_idx-1;
+    figure();
     plot(100*x, C(x,1),100*x, C(x,2));
     xlabel("Step")
     ylabel("Loss")
-    saveas(gcf,'best_l_loss.pdf')
+    %saveas(gcf,'best_l_loss.pdf')
     figure();
     plot(100*x, C(x,3),100*x, C(x,4));
     xlabel("Step")
     ylabel("Cost")
-    saveas(gcf,'best_l_cost.pdf')
+    %saveas(gcf,'best_l_cost.pdf')
     figure();
     plot(100*x, A(x,1),100*x, A(x,2));
     xlabel("Step")
     ylabel("Accuracy")
-    saveas(gcf,'best_l_accuracy.pdf')
+    %saveas(gcf,'best_l_accuracy.pdf')
     %figure();
     %plot(x-1, etas);
     %save("test_fig3","C","A");

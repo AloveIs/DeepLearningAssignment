@@ -1,6 +1,8 @@
 % prepare the environment and constants
 addpath('../ass1/Datasets/cifar-10-batches-mat');
 
+close all;
+
 train_data = 'data_batch_1.mat';
 val_data = 'data_batch_2.mat';
 test_data = 'test_batch.mat';
@@ -18,7 +20,7 @@ d = size(X_train,1);
 %number of hidden nodes
 m = [50,50];
 
-lambda = 0.0001;
+lambda = 0.005;
 
 GDparams.n_batch = 100;
 GDparams.eta = 0.001;
@@ -29,6 +31,7 @@ GDparams.n_cycles = 1;
 %[W , b] = initialize_params(K,m,d);
 %P  = EvaluateClassifier(X_train(:,1:7),W,b);
 %[grad_W_mine, grad_b_mine] = ComputeGradients(X_train(:,1:7), Y_train(:,1:7), P, W, b, lambda);
+%% multi layer network
 %% check gradient
 if false
     [W , b] = initialize_params(K,m,d);
@@ -77,7 +80,7 @@ end
 
 %% training and testing the 9-layer model
 if false
-    GDparams.n_step = 2 * 450;
+    GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
     
     m = [50, 30, 20, 20, 10, 10, 10, 10];
@@ -105,14 +108,14 @@ if false
     
     %[X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
     NetParams = initialize_paramsBN(K,m,d);
-    P  = EvaluateClassifierBN(X_train(:,1:10),NetParams);
+    P  = EvaluateClassifierBN(X_train(:,1:100),NetParams);
     %C  = ComputeCostBN(X_train(:,1:40),Y_train(:,1:40),NetParams,1);
     
-    grads = ComputeGradsNumSlow(X_train(:,1:10), Y_train(:,1:10), NetParams, lambda, 0.00001);
+    grads = ComputeGradsNumSlow(X_train(:,1:100), Y_train(:,1:100), NetParams, lambda, 0.0001);
     grad_b = grads.b;
     grad_W = grads.W;
     
-    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:10), Y_train(:,1:10), P, NetParams, lambda);
+    [grad_W_mine, grad_b_mine,  grad_gammas_mine, grad_betas_mine] = ComputeGradientsBN(X_train(:,1:100), Y_train(:,1:100), P, NetParams, lambda);
     
     for i = 1 : numel(grad_W_mine)
         if i == numel(grad_W_mine)
@@ -142,6 +145,7 @@ if false
 end
 
 if false
+    lambda = 0.005;
     m = [50,50];
     GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
@@ -163,7 +167,8 @@ end
 
 %% training and testing the 9-layer model
 if false
-    GDparams.n_step = 2 * 450;
+    lambda = 0.005;
+    GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
     
     m = [50, 30, 20, 20, 10, 10, 10, 10];
@@ -183,7 +188,7 @@ end
 
 %% batch normalization
 %% training and testing the model
-if true
+if false
     m = [10];
     GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
@@ -233,8 +238,8 @@ if false
     
     m = [50, 30, 20, 20, 10, 10, 10, 10];
     GDparams.n_step = 2 * 450;
-    GDparams.n_cycles = 5;
-    lambda = 0.0001;
+    GDparams.n_cycles = 2;
+    lambda = 0.005;
     
     [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
     NetParams = initialize_paramsBN(K,m,d);
@@ -243,7 +248,7 @@ if false
     NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
 
     % classification using best parameters
-    P = EvaluateClassifierBN(X_test, NetParams_star);
+    P = EvaluateClassifierBN(X_test, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
     [argvalue, argmax] = max(P{end,3});
     % compare with ground truth
     R = argmax == y_test;
@@ -252,12 +257,50 @@ if false
 
 end
 
+%% sensitivity
 
+if false
+    
+    m = [50, 50];
+    GDparams.n_step = 2 * 450;
+    GDparams.n_cycles = 5;
+    lambda = 0.005;
+    
+    
+    sig = 1e-4;
+    
+    [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
+    NetParams = initialize_paramsBN2(K,m,d, sig);
+
+    NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifierBN(X_test, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+    [argvalue, argmax] = max(P{end,3});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+    pause;
+    
+    [W , b] = initialize_params2(K,m,d, sig);
+    [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, X_val, Y_val);
+
+    % classification using best parameters
+    P = EvaluateClassifier(X_test, Wstar, bstar);
+    [argvalue, argmax] = max(P{end});
+    % compare with ground truth
+    R = argmax == y_test;
+
+    fprintf("Accuracy on test data is : %f",(sum(R))/size(Y_test,2)*100);
+
+end
 
 
 %% serach lambda
-if false
-    GDparams.n_step = 900;
+if true
+    GDparams.n_step = 5 * 450;
     GDparams.n_cycles = 2;
 
 
@@ -265,7 +308,7 @@ if false
     [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data();
 
     load('lambda_coarse.mat','L');
-    l_min = -8;
+    l_min = -5;
     l_max = -1;
 
     
@@ -283,15 +326,28 @@ if false
 
         fprintf("##### %d )l = %f lambda = %f",i,l,10^l);
         l = 10^l;
-        [W , b] = initialize_params(K,m,d);
-        [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, l, X_val, Y_val);
+        NetParams = initialize_paramsBN(K,m,d);
+        NetParams_star = MiniBatchGDBN(X, Y, GDparams, NetParams, l, X_val, Y_val);
         close all;
-        P = EvaluateClassifier(X_val, Wstar, bstar);
-        [argvalue, argmax] = max(P{2});
+   
+        % classification using best parameters
+        P = EvaluateClassifierBN(X_val, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+        [argvalue, argmax] = max(P{end,3});
+        % compare with ground truth
         R = argmax == y_val;
 
-        L(i,:) = [l, (sum(R))/size(Y_val,2)*100];
-        fprintf("%d) Accuracy on test data is : %f",i,L(i,2));
+        fprintf("Accuracy on val data is : %f",(sum(R))/size(Y_val,2)*100);
+        
+        
+        P2 = EvaluateClassifierBN(X_test, NetParams_star, NetParams_star.mu_MA, NetParams_star.v_MA);
+        [argvalue, argmax] = max(P2{end,3});
+        % compare with ground truth
+        R2 = argmax == y_test;
+
+        fprintf("Accuracy on test data is : %f",(sum(R2))/size(Y_test,2)*100);
+        
+        L(i,:) = [l, (sum(R))/size(Y_val,2)*100, (sum(R2))/size(Y_test,2)*100];
+        %fprintf("%d) Accuracy on test data is : %f",i,L(i,2));
         save('lambda_coarse.mat','L');
         toc;
     end
@@ -394,6 +450,30 @@ function [W , b] = initialize_params(K,m,d)
     W{i} = 1.0/sqrt(m(end)) * randn(K,m(end));
     b{i} = 1.0/sqrt(m(end)) * randn(K,1);
 end
+
+
+function [W , b] = initialize_params2(K,m,d, sig)
+    
+    W = {};
+    b = {};
+    
+    i = 1;
+    while i <= size(m,2)
+        %input check
+        if i ==1
+           W{i} = sig * randn(m(i),d);
+           b{i} = sig * randn(m(i),1);
+        else
+           W{i} = sig * randn(m(i),m(i-1)); 
+           b{i} = sig * randn(m(i),1);
+        end
+        i = i + 1;
+    end
+    W{i} = sig * randn(K,m(end));
+    b{i} = sig * randn(K,1);
+end
+
+
 %% initialize_params
 %
 % Initialize the values for W and b and all the batch normalization
@@ -418,8 +498,8 @@ function NetParams = initialize_paramsBN(K,m,d)
            NetParams.W{i} = 1.0/sqrt(m(i-1)) * randn(m(i),m(i-1)); 
            NetParams.b{i} = 1.0/sqrt(m(i-1)) * randn(m(i),1);
         end
-        NetParams.gammas{i} = randn(m(i),1); 
-        NetParams.betas{i} = randn(m(i),1);
+        NetParams.gammas{i} = 1.0/sqrt(m(i)) * randn(m(i),1); 
+        NetParams.betas{i} = 1.0/sqrt(m(i)) * randn(m(i),1);
         i = i + 1;
     end
     NetParams.W{i} = 1.0/sqrt(m(end)) * randn(K,m(end));
@@ -476,4 +556,30 @@ function [X ,Y,y, X_val,Y_val,y_val ,X_test,Y_test, y_test] = use_all_data_2()
     
 end
 
-
+function NetParams = initialize_paramsBN2(K,m,d, sig)
+    
+    NetParams.use_bn = true;
+    
+    NetParams.W = {};
+    NetParams.b = {};
+    NetParams.gammas = {};
+    NetParams.betas = {};
+    
+    i = 1;
+    while i <= size(m,2)
+        %input check
+        if i ==1
+           NetParams.W{i} = sig * randn(m(i),d);
+           NetParams.b{i} = sig * randn(m(i),1);
+        else
+           NetParams.W{i} = sig * randn(m(i),m(i-1)); 
+           NetParams.b{i} = sig * randn(m(i),1);
+        end
+        NetParams.gammas{i} = sig * randn(m(i),1); 
+        NetParams.betas{i} =  sig * randn(m(i),1);
+        i = i + 1;
+    end
+    NetParams.W{i} =  sig * randn(K,m(end));
+    NetParams.b{i} =  sig * randn(K,1);
+   
+end

@@ -6,14 +6,23 @@
 % is the regularization factor in the cost function and GDparams is an object containing the parameter values n batch, eta
 % and n epochs
 %
-function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval)
+function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval, alpha)
     
+    if nargin < 8
+       alpha = 0.8;
+    end
+    
+    fast = true;
+
     batch_size = int32(GDparams.n_batch);
     plot_idx = 1;
     eta_min = 1e-5;
     eta_max = 1e-1;
     n_s = GDparams.n_step;
     cycles= GDparams.n_cycles;
+    
+    mu_MA = {};
+    v_MA = {};
     
     Rounds=2*(cycles*n_s);
     
@@ -45,6 +54,7 @@ function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval
         start_index = start_index + batch_size;
 
         P = EvaluateClassifierBN(X_batch, NetParams);
+
         [grad_W, grad_b,grad_gammas, grad_betas] = ComputeGradientsBN(X_batch, Y_batch, P,NetParams, lambda);
         
         for k=1:length(NetParams.W)
@@ -57,18 +67,39 @@ function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval
             end
         end
         
-        %save statistics each 100 iterations
-        if mod(rounds,100)==0
-            C(plot_idx,1) = ComputeCostBN(X, Y, NetParams, lambda);
-            C(plot_idx,2) = ComputeCostBN(Xval, Yval, NetParams, lambda);
-            C(plot_idx,3) = ComputeCostBN(X, Y, NetParams, 0);
-            C(plot_idx,4) = ComputeCostBN(Xval, Yval, NetParams, 0);
+        % update moving averages
+        
+        if rounds == 1
+            for j = 1 : size(P,1)
+                mu_MA{j} = P{j,4};
+                v_MA{j} = P{j,5};    
+            end
+        else
+            %update
+            for j = 1 : size(P,1)
 
-            A(plot_idx,1) = compute_accuracy(X, Y,NetParams);
-            A(plot_idx,2) = compute_accuracy(Xval, Yval,NetParams);
-            etas(plot_idx) = eta;
-            plot_idx = 1 + plot_idx;
+                mu_MA{j} = alpha * P{j,4}  + (1-alpha) * mu_MA{j};
+                v_MA{j} = alpha * P{j,5} + (1-alpha) * v_MA{j};    
+            end
+        end 
+        
+        if fast == false
+
+            %save statistics each 100 iterations
+            if mod(rounds,100)==0
+                C(plot_idx,1) = ComputeCostBN(X, Y, NetParams, lambda, mu_MA, v_MA);
+                C(plot_idx,2) = ComputeCostBN(Xval, Yval, NetParams, lambda, mu_MA, v_MA);
+                C(plot_idx,3) = ComputeCostBN(X, Y, NetParams, 0, mu_MA, v_MA);
+                C(plot_idx,4) = ComputeCostBN(Xval, Yval, NetParams, 0, mu_MA,v_MA);
+
+                A(plot_idx,1) = compute_accuracy(X, Y,NetParams, mu_MA,v_MA);
+                A(plot_idx,2) = compute_accuracy(Xval, Yval,NetParams, mu_MA, v_MA);
+                etas(plot_idx) = eta;
+                plot_idx = 1 + plot_idx;
+            end
         end
+        
+        
         %update eta
         eta = eta + sign*eta_step;
         if(eta >= (eta_max-1e-9))
@@ -78,38 +109,44 @@ function NetParams = MiniBatchGDBN(X, Y, GDparams, NetParams, lambda, Xval, Yval
             eta = eta_min;
             sign = -sign;
         end
+
     end
     
-    % plot loss and accuracy of the network
-    x = 1 : plot_idx-1;
-    plot(100*x, C(x,1),100*x, C(x,2));
-    xlabel("Step")
-    ylabel("Loss")
-    saveas(gcf,'lossBN.pdf')
-    figure();
-    plot(100*x, C(x,3),100*x, C(x,4));
-    xlabel("Step")
-    ylabel("Cost")
-    saveas(gcf,'costBN.pdf')
-    figure();
-    plot(100*x, A(x,1),100*x, A(x,2));
-    xlabel("Step")
-    ylabel("Accuracy")
-    saveas(gcf,'accuracyBN.pdf')
-    %figure();
-    %plot(x-1, etas);
-    %save("test_fig3","C","A");
-    % set return values
+    if fast == false
+        % plot loss and accuracy of the network
+        x = 1 : plot_idx-1;
+        figure();
+        plot(100*x, C(x,1),100*x, C(x,2));
+        xlabel("Step")
+        ylabel("Loss")
+        saveas(gcf,'BN3l_loss.pdf')
+        figure();
+        plot(100*x, C(x,3),100*x, C(x,4));
+        xlabel("Step")
+        ylabel("Cost")
+        saveas(gcf,'BN3l_cost.pdf')
+        figure();
+        plot(100*x, A(x,1),100*x, A(x,2));
+        xlabel("Step")
+        ylabel("Accuracy")
+        saveas(gcf,'BN3l_accuracy.pdf')
+        %figure();
+        %plot(x-1, etas);
+        %save("test_fig3","C","A");
+        % set return values
+    end
     
+    NetParams.mu_MA = mu_MA;
+    NetParams.v_MA = v_MA;
 end
 
 
 
-function acc = compute_accuracy(X,Y,NetParams)
+function acc = compute_accuracy(X,Y,NetParams, mu_MA, v_MA)
 
 y = vec2ind(Y);
 
-P = EvaluateClassifierBN(X, NetParams);
+P = EvaluateClassifierBN(X, NetParams, mu_MA, v_MA);
 
 [~, argmax] = max(P{end,3});
 

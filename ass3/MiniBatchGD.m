@@ -77,20 +77,21 @@ function [Wstar, bstar] = MiniBatchGD(X, Y, GDparams, W, b, lambda, Xval, Yval)
     
     % plot loss and accuracy of the network
     x = 1 : plot_idx-1;
+    figure();
     plot(100*x, C(x,1),100*x, C(x,2));
     xlabel("Step")
     ylabel("Loss")
-    saveas(gcf,'best_l_loss.pdf')
+    %saveas(gcf,'best_l_loss.pdf')
     figure();
     plot(100*x, C(x,3),100*x, C(x,4));
     xlabel("Step")
     ylabel("Cost")
-    saveas(gcf,'best_l_cost.pdf')
+    %saveas(gcf,'best_l_cost.pdf')
     figure();
     plot(100*x, A(x,1),100*x, A(x,2));
     xlabel("Step")
     ylabel("Accuracy")
-    saveas(gcf,'best_l_accuracy.pdf')
+    %saveas(gcf,'best_l_accuracy.pdf')
     %figure();
     %plot(x-1, etas);
     %save("test_fig3","C","A");

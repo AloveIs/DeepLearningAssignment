@@ -1,5 +1,9 @@
-FILES = Assignment3.m ComputeCost.m ComputeGradients.m EvaluateClassifier.m LoadBatch.m MiniBatchGD.m
+FILES =Assignment3.m EvaluateClassifier.m ComputeCost.m MiniBatchGD.m  ComputeGradients.m EvaluateClassifierBN.m ComputeCostBN.m ComputeGradientsBN.m MiniBatchGDBN.m LoadBatch.m
+
 SHELL := /bin/bash
+
+
+
 
 all: merged_code.m report.pdf
 
